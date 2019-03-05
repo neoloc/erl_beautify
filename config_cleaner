@@ -1,0 +1,386 @@
+#!/usr/bin/env bash
+# clean the edge router configuration output to a more readable format
+
+if [ $# -ne 1 ]; then
+  echo "illegal number of parameters"
+fi
+
+# VARS
+FILE=$1
+
+# FUNCTIONS
+function interfaces_loopback() {
+  if [[ "$(grep "set interfaces loopback" ${FILE})" ]]; then
+    grep "set interfaces loopback" ${FILE}
+    echo ""
+  fi
+}
+
+function interfaces_other() {
+  # get a list of interface types (e.g. ethernet, openvpn, etc)
+  for type in $(grep "set interfaces " ${FILE} | awk '{print $3}' | uniq); do
+    if [[ ! "${type}" == "loopback" ]]; then
+      # get a list of interfaces for the type of interface
+      for interface in $(grep "set interfaces ${type} " ${FILE} | awk '{print $4}' | uniq); do
+        # echo out nicely formatted code
+        echo "edit interfaces ${type} ${interface}"
+        grep "set interfaces ${type} ${interface} " ${FILE} | sed "s/set interfaces ${type} ${interface}/ set/g"
+        echo "exit"; echo ""
+      done
+    fi
+  done
+}
+
+function firewall_options() {
+  # check if there are firewall options
+  if [[ ! "$(grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group)' | wc -l)" == "0" ]]; then
+    # if true, echo out nicely formatted code
+    echo "edit firewall"
+    grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group)' | sed "s/set firewall/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function firewall_groups() {
+  # check if there are firewall groups
+  if [[ ! "$(grep "set firewall group " ${FILE} | wc -l)" == "0" ]]; then
+    # for each group type..
+    for type in $(grep "set firewall group " ${FILE} | awk '{print $4}' | uniq); do
+      # for name in group
+      for name in $(grep "set firewall group ${type}" ${FILE} | awk '{print $5}' | uniq); do
+        # echo out nicely formatted code
+        echo "edit firewall group ${type} ${name}"
+        grep "set firewall group ${type} ${name}" ${FILE} | sed "s/set firewall group ${type} ${name}/ set/g"
+        echo "exit"; echo ""
+      done
+    done
+  fi
+}
+
+function firewall_rules() {
+  # check there are firewall rules
+  if [[ ! "$(grep -E "set firewall (name|ipv6-name)" ${FILE} | wc -l)" == "0" ]]; then
+    # for each type, ipv4 and ipv6
+    for type in name ipv6-name; do
+      # get a list of firewall rule sets (name's)
+      for name in $(grep "set firewall ${type} " ${FILE} | awk '{print $4}' | uniq); do
+        # echo the ruleset specific options out
+        echo "edit firewall ${type} ${name}"
+        grep "set firewall ${type} ${name} " ${FILE} | grep -v rule | sed "s/set firewall ${type} ${name}/ set/g"
+        echo "exit"; echo ""
+        # for each ruleset rule
+        for rule in $(grep "set firewall ${type} ${name} rule " ${FILE} | awk '{print $6}' | uniq); do
+          # echo out nicely formatted code
+          echo "edit firewall ${type} ${name} rule ${rule}"
+          grep "set firewall ${type} ${name} rule ${rule} " ${FILE} |sed "s/set firewall ${type} ${name} rule ${rule}/ set/g"
+          echo "exit"; echo ""
+        done
+      done
+    done
+  fi
+}
+
+function port_forward() {
+  # check for port-forward rules
+  if [[ ! "$(grep "set port-forward " ${FILE} | wc -l)" == "0" ]]; then
+      echo "edit port-forward"
+      grep "set port-forward " ${FILE} | sed "s/set port-forward/ set/g"
+      echo "exit"; echo ""
+  fi
+}
+
+function services_nat() {
+  # check for nat rules
+  if [[ ! "$(grep "set service nat" ${FILE} | wc -l)" == "0" ]]; then
+    # for each nat rule
+    for rule in $(grep "set service nat rule " ${FILE} | awk '{print $5}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit service nat rule ${rule}"
+      grep "set service nat rule ${rule} " ${FILE} | sed "s/set service nat rule ${rule}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function services_ssh() {
+  # check for ssh service configuration lines
+  if [[ ! "$(grep "set service ssh " ${FILE} | wc -l)" == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit service ssh"
+    grep "set service ssh " ${FILE} | sed "s/set service ssh/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function services_gui() {
+  # check for gui service configuration lines
+  if [[ ! "$(grep "set service gui " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit service gui"
+    grep "set service gui " ${FILE} | sed "s/set service gui/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function services_dns() {
+  # check for dns service configuration lines
+  if [[ ! "$(grep "set service dns forwarding " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit service dns forwarding"
+    grep "set service dns forwarding " ${FILE} | sed "s/set service dns forwarding/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function services_snmp() {
+  # check for snmp configuration lines
+  if [[ ! "$(grep "set service snmp " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit service snmp"
+    grep "set service snmp " ${FILE} | sed "s/set service snmp/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+# function system_packages() {
+#   #statements
+#   #set system package repository wheezy components 'main contrib non-free'
+#   #set system package repository wheezy distribution wheezy
+#   #set system package repository wheezy password ''
+#   #set system package repository wheezy url 'http://mirror.internode.on.net/pub/debian'
+#   #set system package repository wheezy username ''
+#   #set system package repository wheezy-security components main
+#   #set system package repository wheezy-security distribution wheezy/updates
+#   #set system package repository wheezy-security password ''
+#   #set system package repository wheezy-security url 'http://security.debian.org'
+#   #set system package repository wheezy-security username ''
+# }
+
+function system_conntrack() {
+  # check for system conntrack configuration lines
+  if [[ ! "$(grep "set system conntrack " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit system conntrack"
+    grep "set system conntrack " ${FILE} | sed "s/set system conntrack/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function system_ntp() {
+  # check for system ntp configuration lines
+  if [[ ! "$(grep "set system ntp " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit system ntp"
+    grep "set system ntp " ${FILE} | sed "s/set system ntp/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function system_offload() {
+  # check for system offload configuration lines
+  if [[ ! "$(grep "set system offload " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit system offload"
+    grep "set system offload " ${FILE} | sed "s/set system offload/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function system_syslog() {
+  # check for system syslog configuration lines
+  if [[ ! "$(grep "set system syslog " ${FILE} | wc -l)"  == "0" ]]; then
+    # echo out nicely formatted code
+    echo "edit system syslog"
+    grep "set system syslog " ${FILE} | sed "s/set system syslog/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function system_other(){
+  SYSTEM_OTHER=0
+  for sysopt in time-zone domain-name host-name name-server; do
+    if [[ ! "$(grep "set system ${sysopt} " ${FILE} | wc -l)" == "0" ]]; then
+      grep "set system ${sysopt} " ${FILE}
+      ((SYSTEM_OTHER++))
+    fi
+  done
+  if [[ ! "$SYSTEM_OTHER" == "0" ]]; then
+    # add a blank line after system_other lines
+    echo ""
+  fi
+}
+
+function system_login_users() {
+  # are there users?
+  if [[ ! "$(grep "set system login user " ${FILE} | wc -l)" == "0" ]]; then
+    # for each user ...
+    for sysacnt in $(grep "set system login user " ${FILE} | awk '{print $5}' | uniq ); do
+      # output user code
+      echo "edit system login user ${sysacnt}"
+      grep "set system login user ${sysacnt} " ${FILE} | sed "s/set system login user ${sysacnt}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function system_login_radius() {
+  # are there radius-server's?
+  if [[ ! "$(grep "set system login radius-server " ${FILE} | wc -l)" == "0" ]]; then
+    # for each user ...
+    for radius in $(grep "set system login radius-server " ${FILE} | awk '{print $5}' | uniq ); do
+      # output radius-server code
+      echo "edit system login radius-server ${radius}"
+      grep "set system login radius-server ${radius} " ${FILE} | sed "s/set system login radius-server ${radius}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function system_login_banner() {
+  # are there banner's?
+  if [[ ! "$(grep "set system login banner " ${FILE} | wc -l)" == "0" ]]; then
+    # output banner code
+    echo "edit system login banner "
+    grep "set system login banner " ${FILE} | sed "s/set system login banner/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function protocols_static_routes() {
+  # check if protocol segments are in use
+  if [[ ! "$(grep "set protocols " ${FILE} | wc -l)" == "0" ]]; then
+    # for each protocol...
+    for protocol in bgp igmp-proxy ospf ospfv3 rip ripng static; do
+      # check if it is in use
+      if [[ ! "$(grep "set protocols ${protocol} " ${FILE} | wc -l)" == "0" ]]; then
+        # echo out nicely formatted code
+        echo "edit protocols ${protocol}"
+        grep "set protocols ${protocol} " ${FILE} | sed "s/set protocols ${protocol}/ set/g"
+        echo "exit"; echo ""
+      fi
+    done
+  fi
+}
+
+function traffic_policy_shaper() {
+  # check there is a traffic-policy shaper
+  if [[ ! "$(grep -E "set traffic-policy shaper " ${FILE} | wc -l)" == "0" ]]; then
+    # get a list of traffic-policy shaper names
+    for name in $(grep "set traffic-policy shaper " ${FILE} | awk '{print $4}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit traffic-policy shaper ${name}"
+      grep "set traffic-policy shaper ${name} " ${FILE} | grep -v " class" | sed "s/set traffic-policy shaper ${name}/ set/g"
+      echo "exit"; echo ""
+      for class in $(grep "set traffic-policy shaper ${name} class " ${FILE} | awk '{print $6}' | uniq); do
+        # echo out nicely formatted code (classes)
+        echo "edit traffic-policy shaper ${name} class ${class}"
+        grep "set traffic-policy shaper ${name} class ${class} " ${FILE} | sed "s/set traffic-policy shaper ${name} class ${class}/ set/g"
+        echo "exit"; echo ""
+      done
+    done
+  fi
+}
+
+function traffic_control_smart_queue() {
+  # are there traffic-control smart-queue groups?
+  if [[ ! "$(grep "set traffic-control smart-queue " ${FILE} | wc -l)" == "0" ]]; then
+    # for each queue type..
+    for type in $(grep "set traffic-control smart-queue " ${FILE} | awk '{print $4}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit traffic-control smart-queue ${type}"
+      grep "set traffic-control smart-queue ${type}" ${FILE} | sed "s/set traffic-control smart-queue ${type}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function traffic_control_other() {
+  # check there is a traffic-control optimized-queue
+  if [[ ! "$(grep -E "set traffic-control optimized-queue" ${FILE} | wc -l)" == "0" ]]; then
+    grep "set traffic-control optimized-queue " ${FILE}
+  fi
+
+  # check there is a traffic-control advanced-queue
+  if [[ ! "$(grep -E "set traffic-control advanced-queue" ${FILE} | wc -l)" == "0" ]]; then
+    grep "set traffic-control advanced-queue " ${FILE}
+  fi
+}
+
+
+
+function services_dhcp_server() {
+  #check there is a dhcp-server segment
+  if [[ ! "$(grep "set service dhcp-server" ${FILE} | wc -l)" == "0" ]]; then
+    # check for non-shared-network-name segments
+    if [[ ! "$(grep "set service dhcp-server " ${FILE} | grep -v "shared-network-name" | wc -l)" == "0" ]]; then
+      # output non shared-network-name segments
+      echo "edit service dhcp-server"
+      grep "set service dhcp-server" ${FILE} | grep -v "shared-network-name" | sed "s/set service dhcp-server/ set/g"
+      echo "exit"; echo ""
+    fi
+    # check for shared-network-name segments
+    if [[ ! "$(grep "set service dhcp-server shared-network-name " ${FILE} | wc -l)" == "0" ]]; then
+      # for each network segment...
+      for network in $(grep "set service dhcp-server shared-network-name " ${FILE} | awk '{print $5}' | uniq); do
+        # output shared-network-name
+        echo "edit service dhcp-server shared-network-name ${network}"
+        grep "set service dhcp-server shared-network-name ${network} " ${FILE} | sed "s/set service dhcp-server shared-network-name ${network}/ set/g"
+        echo "exit"; echo ""
+      done
+    fi
+  fi
+}
+
+function vpn_config() {
+  # are there configured vpn's?
+  for vpn in ipsec l2tp pptp rsa-keys; do
+    if [[ ! "$(grep "set vpn ${vpn} " ${FILE} | wc -l)" == "0" ]]; then
+      # output the vpn config
+      echo "edit vpn ${vpn}"
+      grep "set vpn ${vpn} " ${FILE} | sed "s/set vpn ${vpn}/ set/g"
+      echo "exit"; echo ""
+    fi
+  done
+}
+
+function load_balance() {
+  # are there load-balance groups?
+  if [[ ! "$(grep "set load-balance group " ${FILE} | wc -l)" == "0" ]]; then
+    # for each group type..
+    for type in $(grep "set load-balance group " ${FILE} | awk '{print $4}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit load-balance group ${type}"
+      grep "set load-balance group ${type}" ${FILE} | sed "s/set load-balance group ${type}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+
+# PROCESS TIME!
+interfaces_loopback
+interfaces_other
+firewall_options
+firewall_groups
+firewall_rules
+port_forward
+services_nat
+services_ssh
+services_gui
+services_dns
+services_dhcp_server
+services_snmp
+system_other
+system_login_users
+system_login_radius
+system_login_banner
+system_conntrack
+system_ntp
+system_syslog
+system_offload
+traffic_policy_shaper
+traffic_control_smart_queue
+traffic_control_other
+protocols_static_routes
+vpn_config
+load_balance
