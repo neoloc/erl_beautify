@@ -57,6 +57,19 @@ function firewall_groups() {
   fi
 }
 
+function firewall_modify() {
+  # are there modify groups?
+  if [[ ! "$(grep "set firewall modify " ${FILE} | wc -l)" == "0" ]]; then
+    # for each group
+    for type in $(grep "set firewall modify " ${FILE} | awk '{print $4}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit firewall modify ${type}"
+      grep "set firewall modify ${type}" ${FILE} | sed "s/set firewall modify ${type}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
 function firewall_rules() {
   # check there are firewall rules
   if [[ ! "$(grep -E "set firewall (name|ipv6-name)" ${FILE} | wc -l)" == "0" ]]; then
@@ -362,6 +375,7 @@ interfaces_loopback
 interfaces_other
 firewall_options
 firewall_groups
+firewall_modify
 firewall_rules
 port_forward
 services_nat
