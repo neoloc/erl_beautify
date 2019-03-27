@@ -33,10 +33,10 @@ function interfaces_other() {
 
 function firewall_options() {
   # check if there are firewall options
-  if [[ ! "$(grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group)' | wc -l)" == "0" ]]; then
+  if [[ ! "$(grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group|modify)' | wc -l)" == "0" ]]; then
     # if true, echo out nicely formatted code
     echo "edit firewall"
-    grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group)' | sed "s/set firewall/ set/g"
+    grep "set firewall " ${FILE}  | grep -Ev '(name|ipv6-name|group|modify)' | sed "s/set firewall/ set/g"
     echo "exit"; echo ""
   fi
 }
