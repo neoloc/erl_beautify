@@ -366,12 +366,19 @@ function vpn_config() {
 function load_balance() {
   # are there load-balance groups?
   if [[ ! "$(grep "set load-balance group " ${FILE} | wc -l)" == "0" ]]; then
-    # for each group type..
-    for type in $(grep "set load-balance group " ${FILE} | awk '{print $4}' | uniq); do
+    # for each group..
+    for group in $(grep "set load-balance group " ${FILE} | awk '{print $4}' | uniq); do
       # echo out nicely formatted code
-      echo "edit load-balance group ${type}"
-      grep "set load-balance group ${type}" ${FILE} | sed "s/set load-balance group ${type}/ set/g"
+      echo "edit load-balance group ${group}"
+      grep "set load-balance group ${group}" ${FILE} | grep -Ev '( interface )'| sed "s/set load-balance group ${group}/ set/g"
       echo "exit"; echo ""
+      # for each interface
+      for interface in $(grep "set load-balance group ${group} " ${FILE} | grep -E '(eth|vtun|switch)' | awk '{print $6}' | uniq); do
+        # echo out nicely formatted code
+        echo "edit load-balance group ${group} interface ${interface}"
+        grep "set load-balance group ${group} interface ${interface} " ${FILE} | sed "s/set load-balance group ${group} interface ${interface}/ set/g"
+        echo "exit"; echo ""
+      done
     done
   fi
 }
