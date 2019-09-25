@@ -162,19 +162,18 @@ function services_snmp() {
   fi
 }
 
-# function system_packages() {
-#   #statements
-#   #set system package repository wheezy components 'main contrib non-free'
-#   #set system package repository wheezy distribution wheezy
-#   #set system package repository wheezy password ''
-#   #set system package repository wheezy url 'http://mirror.internode.on.net/pub/debian'
-#   #set system package repository wheezy username ''
-#   #set system package repository wheezy-security components main
-#   #set system package repository wheezy-security distribution wheezy/updates
-#   #set system package repository wheezy-security password ''
-#   #set system package repository wheezy-security url 'http://security.debian.org'
-#   #set system package repository wheezy-security username ''
-# }
+function system_packages() {
+  # are there package repositories?
+  if [[ ! "$(grep "set system package repository " ${FILE} | wc -l)" == "0" ]]; then
+    # for each repository ...
+    for repo in $(grep "set system package repository " ${FILE} | awk '{print $5}' | uniq ); do
+      # output repository code
+      echo "edit system package repository ${repo}"
+      grep "set system package repository ${repo} " ${FILE} | sed "s/set system package repository ${repo}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
 
 function system_conntrack() {
   # check for system conntrack configuration lines
@@ -353,14 +352,11 @@ function traffic_control_other() {
   if [[ ! "$(grep -E "set traffic-control optimized-queue" ${FILE} | wc -l)" == "0" ]]; then
     grep "set traffic-control optimized-queue " ${FILE}
   fi
-
   # check there is a traffic-control advanced-queue
   if [[ ! "$(grep -E "set traffic-control advanced-queue" ${FILE} | wc -l)" == "0" ]]; then
     grep "set traffic-control advanced-queue " ${FILE}
   fi
 }
-
-
 
 function services_dhcp_server() {
   #check there is a dhcp-server segment
@@ -417,7 +413,6 @@ function load_balance() {
   fi
 }
 
-
 # PROCESS TIME!
 interfaces_loopback
 interfaces_other
@@ -432,6 +427,7 @@ services_gui
 services_dns
 services_dhcp_server
 services_snmp
+system_packages
 system_other
 system_login_users
 system_login_radius
