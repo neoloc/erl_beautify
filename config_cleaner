@@ -58,14 +58,21 @@ function firewall_groups() {
 }
 
 function firewall_modify() {
-  # are there modify groups?
-  if [[ ! "$(grep "set firewall modify " ${FILE} | wc -l)" == "0" ]]; then
-    # for each group
-    for type in $(grep "set firewall modify " ${FILE} | awk '{print $4}' | uniq); do
-      # echo out nicely formatted code
-      echo "edit firewall modify ${type}"
-      grep "set firewall modify ${type}" ${FILE} | sed "s/set firewall modify ${type}/ set/g"
+  # check there are modify group rules
+  if [[ ! "$(grep -E "set firewall modify " ${FILE} | grep -Ev '( rule )' | wc -l)" == "0" ]]; then
+    # get a list of firewall modify rule sets (name's)
+    for name in $(grep "set firewall modify " ${FILE} | grep -Ev '( rule )' | awk '{print $4}' | uniq); do
+      # echo the ruleset specific options out
+      echo "edit firewall modify ${name}"
+      grep "set firewall modify ${name}" ${FILE} | grep -Ev '( rule )' | sed "s/set firewall modify ${name}/ set/g"
       echo "exit"; echo ""
+      # for each ruleset rule
+      for rule in $(grep "set firewall modify ${name} rule " ${FILE} | awk '{print $6}' | uniq); do
+        # echo out nicely formatted code
+        echo "edit firewall modify ${name} rule ${rule}"
+        grep "set firewall modify ${name} rule ${rule} " ${FILE} |sed "s/set firewall modify ${name} rule ${rule}/ set/g"
+        echo "exit"; echo ""
+      done
     done
   fi
 }
