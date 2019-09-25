@@ -304,11 +304,11 @@ function traffic_policy_shaper() {
 function traffic_control_smart_queue() {
   # are there traffic-control smart-queue groups?
   if [[ ! "$(grep "set traffic-control smart-queue " ${FILE} | wc -l)" == "0" ]]; then
-    # for each queue type..
-    for type in $(grep "set traffic-control smart-queue " ${FILE} | awk '{print $4}' | uniq); do
+    # for each interface...
+    for interface in $(grep "set traffic-control smart-queue " ${FILE} | awk '{print $4}' | uniq); do
       # echo out nicely formatted code
-      echo "edit traffic-control smart-queue ${type}"
-      grep "set traffic-control smart-queue ${type}" ${FILE} | sed "s/set traffic-control smart-queue ${type}/ set/g"
+      echo "edit traffic-control smart-queue ${interface}"
+      grep "set traffic-control smart-queue ${interface}" ${FILE} | sed "s/set traffic-control smart-queue ${interface}/ set/g"
       echo "exit"; echo ""
     done
   fi
