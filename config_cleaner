@@ -266,11 +266,45 @@ function system_login_banner() {
   fi
 }
 
-function protocols_static_routes() {
+function protocols_bgp() {
+  # check if bgp segments are in use
+  if [[ ! "$(grep "set protocols bgp " ${FILE} | wc -l)" == "0" ]]; then
+    for asn in $(grep "set protocols bgp " ${FILE} | awk '{print $4}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit protocols bgp ${asn}"
+      grep "set protocols bgp ${asn} " ${FILE} | sed "s/set protocols bgp ${asn}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function protocols_static_tables() {
+  # check if static tables are defined
+  if [[ ! "$(grep "set protocols static table " ${FILE} | wc -l)" == "0" ]]; then
+    for table in $(grep "set protocols static table " ${FILE} | awk '{print $5}' | uniq); do
+      # echo out nicely formatted code
+      echo "edit protocols static table ${table}"
+      grep "set protocols static table ${table} " ${FILE} | sed "s/set protocols static table ${table}/ set/g"
+      echo "exit"; echo ""
+    done
+  fi
+}
+
+function protocols_static_notables() {
+  # check if static routes are defined
+  if [[ ! "$(grep "set protocols static " ${FILE} | wc -l)" == "0" ]]; then
+    # echo out nicely formatted code, exclude static table's
+    echo "edit protocols static"
+    grep "set protocols static " ${FILE} | grep -Ev '( table )' | sed "s/set protocols static/ set/g"
+    echo "exit"; echo ""
+  fi
+}
+
+function protocols_other() {
   # check if protocol segments are in use
   if [[ ! "$(grep "set protocols " ${FILE} | wc -l)" == "0" ]]; then
     # for each protocol...
-    for protocol in bgp igmp-proxy ospf ospfv3 rip ripng static; do
+    for protocol in igmp-proxy ospf ospfv3 rip ripng; do
       # check if it is in use
       if [[ ! "$(grep "set protocols ${protocol} " ${FILE} | wc -l)" == "0" ]]; then
         # echo out nicely formatted code
@@ -409,6 +443,9 @@ system_offload
 traffic_policy_shaper
 traffic_control_smart_queue
 traffic_control_other
-protocols_static_routes
+protocols_bgp
+protocols_static_tables
+protocols_static_notables
+protocols_other
 vpn_config
 load_balance
