@@ -414,6 +414,7 @@ function load_balance() {
 }
 
 # PROCESS TIME!
+system_other
 interfaces_loopback
 interfaces_other
 firewall_options
@@ -428,7 +429,6 @@ services_dns
 services_dhcp_server
 services_snmp
 system_packages
-system_other
 system_login_users
 system_login_radius
 system_login_banner
