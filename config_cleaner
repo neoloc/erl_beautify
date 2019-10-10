@@ -9,6 +9,41 @@ fi
 FILE=$1
 
 # FUNCTIONS
+function configure() {
+  echo "configure"; echo ""
+}
+
+function openvpn_secrets() {
+  if [[ ! "$(grep openvpn ${FILE} | grep shared-secret-key-file | awk '{print $6}') | wc -l" == "0" ]]; then
+    # first, output the static keys
+    for secret in $(grep openvpn ${FILE} | grep shared-secret-key-file | awk '{print $6}' | uniq); do
+      echo "cat <<EOF> ${secret}"
+      echo "<paste in the openvpn static key contents here>"
+      echo "EOF"; echo ""
+    done
+    # second, output chmod commands
+    for secret in $(grep openvpn ${FILE} | grep shared-secret-key-file | awk '{print $6}' | uniq); do
+      echo "chmod 600 ${secret}"
+    done
+    # add an empty line after this
+    echo ""
+  fi
+}
+
+function openvpn_groups() {
+  if [[ ! "$(grep openvpn ${FILE} | grep openvpn-option | grep group | awk '{print $7}' | rev | cut -c 2- | rev | uniq | wc -l)" == "0" ]]; then
+    # change to sudo first
+    echo "sudo -i"
+    for group in $(grep openvpn ${FILE} | grep openvpn-option | grep group | awk '{print $7}' | rev | cut -c 2- | rev | uniq); do
+      echo "addgroup ${group}"
+    done
+    # exit sudo
+    echo "exit"
+    # add an empty line after thopenvpn_secrets()
+    echo ""
+  fi
+}
+
 function interfaces_loopback() {
   if [[ "$(grep "set interfaces loopback" ${FILE})" ]]; then
     grep "set interfaces loopback" ${FILE}
@@ -414,6 +449,13 @@ function load_balance() {
 }
 
 # PROCESS TIME!
+
+# these must go first
+openvpn_groups
+openvpn_secrets
+configure
+
+# these can be ordered how you like
 system_other
 interfaces_loopback
 interfaces_other
