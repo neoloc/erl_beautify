@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# convert a ssh public key to ERL formated key
+
+while read line
+do
+    # break the ssh key into variables
+    TYPE=$(echo $line | awk '{print $1}')
+    KEY=$(echo $line | awk '{print $2}')
+    ALIAS=$(echo $line | awk '{print $3}')
+
+    # output the ssh key in ERL format
+    echo "edit system login user oneit authentication public-keys $ALIAS"
+    echo " set key $KEY"
+    echo " set type $TYPE"
+    echo "exit"
+done < "${1:-/dev/stdin}"
