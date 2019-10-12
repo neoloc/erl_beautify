@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# convert a ssh public key to ERL formated key
+# convert a ssh public key to ERL formatted key
 
 while read line
 do
