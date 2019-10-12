@@ -13,4 +13,5 @@ do
     echo " set key $KEY"
     echo " set type $TYPE"
     echo "exit"
+    echo ""
 done < "${1:-/dev/stdin}"
