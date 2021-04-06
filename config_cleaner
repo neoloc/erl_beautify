@@ -448,6 +448,21 @@ function load_balance() {
   fi
 }
 
+function zone_policy() {
+  # check if there are zone-policies
+  if [[ ! "$(grep "set zone-policy zone " ${FILE} | wc -l)" == "0" ]]; then
+    # for each zone..
+    for zone in $(grep "set zone-policy zone " ${FILE} | awk '{print $4}' | uniq); do
+	  echo "edit zone-policy zone ${zone}"
+	  grep "set zone-policy zone ${zone} description " ${FILE} | sed "s/set zone-policy zone ${zone} description/ set description/g"
+	  grep "set zone-policy zone ${zone} interface " ${FILE} | sed "s/set zone-policy zone ${zone} interface/ set interface/g"
+	  grep "set zone-policy zone ${zone} local-zone" ${FILE} | sed "s/set zone-policy zone ${zone} local-zone/ set local-zone/g"
+	  grep "set zone-policy zone ${zone} default-action " ${FILE} | sed "s/set zone-policy zone ${zone} default-action/ set default-action/g"
+	  grep "set zone-policy zone ${zone} from " ${FILE} | sed "s/set zone-policy zone ${zone} from/ set from/g"
+    done
+  fi
+}
+
 # PROCESS TIME!
 
 # these must go first
@@ -487,3 +502,4 @@ protocols_static_notables
 protocols_other
 vpn_config
 load_balance
+zone_policy
