@@ -459,6 +459,7 @@ function zone_policy() {
 	  grep "set zone-policy zone ${zone} local-zone" ${FILE} | sed "s/set zone-policy zone ${zone} local-zone/ set local-zone/g"
 	  grep "set zone-policy zone ${zone} default-action " ${FILE} | sed "s/set zone-policy zone ${zone} default-action/ set default-action/g"
 	  grep "set zone-policy zone ${zone} from " ${FILE} | sed "s/set zone-policy zone ${zone} from/ set from/g"
+      echo "exit"; echo ""
     done
   fi
 }
