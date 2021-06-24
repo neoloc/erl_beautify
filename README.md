@@ -9,7 +9,7 @@
 1) Download the repository
 
     mkdir -p $HOME/.local/src
-    git clone git@gitlab1.oneitservices.com.au:Ben.Vincent/erl_beautify.git $HOME/.local/src/erl_beautify
+    git clone https://github.com/neoloc/erl_beautify.git $HOME/.local/src/erl_beautify
 
 ## How to use
 
@@ -21,9 +21,9 @@
 
     From and ERL device:
         show configuration commands
-    
+
     Save output of the above command into a file like '/path/to/input_file'
 
 2) Run the script against the input file. Optionally, redirect output to a file like output_file
-  
+
     config_cleaner /path/to/input_file > /path/to/output_file
